@@ -1,0 +1,95 @@
+name: Build/release Electron app
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - '**.md'
+    tags-ignore:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  release:
+    runs-on: ${{ matrix.os }}
+    
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v3
+
+      - name: Install Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+
+      - name: Clear npm cache
+        run: npm cache clean --force
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: build-linux
+        if: matrix.os == 'ubuntu-latest'
+        run: npm run build:linux
+
+      - name: build-mac
+        if: matrix.os == 'macos-latest'
+        run: npm run build:mac
+
+      - name: build-win
+        if: matrix.os == 'windows-latest'
+        run: npm run build:win
+
+      - name: release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: "v20250411.1"
+          draft: false
+          #name: "EchoMirror 发布 ${{ env.VERSION }}"
+          body: |
+            # Echo Mirror 智能魔镜
+            
+            ## 📦 发布内容
+            
+            此版本包含以下安装包，请根据您的操作系统选择对应的文件：
+            
+            ### Windows
+            - **Windows安装包** (.exe文件) - Windows 10/11
+            
+            ### macOS
+            - **macOS安装包** (.dmg文件) - 兼容Intel/Apple Silicon芯片
+            
+            ### Linux
+            - **AppImage文件** - 适用于大多数Linux发行版
+            - **DEB安装包** - Debian/Ubuntu系列
+            
+            ## 📋 安装说明
+            
+            1. 下载对应您系统的安装包
+            2. 运行安装程序并按照提示完成安装
+            3. 启动Echo Mirror，开始享受您的智能魔镜体验
+            
+            ## 🔗 相关链接
+            
+            - [官方网站](https://mirror.aoun.ltd/)
+            - [项目主页](https://github.com/298977887/EchoMirror)
+            - [问题反馈](https://github.com/298977887/EchoMirror/issues)
+            - [使用文档](https://github.com/298977887/EchoMirror/wiki)
+          files: |
+            dist/*.exe
+            dist/*.zip
+            dist/*.dmg
+            dist/*.AppImage
+            dist/*.snap
+            dist/*.deb
+            dist/*.rpm
+            dist/*.tar.gz
+            dist/*.yml
+            dist/*.blockmap
+        env:
+          GITHUB_TOKEN: ${{ secrets.ACCESS_TOKEN }}
